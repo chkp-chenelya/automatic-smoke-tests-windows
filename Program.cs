@@ -34,6 +34,8 @@ class Program
             Console.WriteLine("\n═══════════════════════════════════════");
             Console.WriteLine($"Overall Result: {passedTests}/{totalTests} tests passed");
             Console.WriteLine("═══════════════════════════════════════");
+            
+            report.EndTime = DateTime.Now;
             report.GenerateAndOpenReport();
         }
         catch (Exception ex)
