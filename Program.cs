@@ -1,21 +1,19 @@
 ﻿using SmokeTestsAgentWin.Tests;
 using System;
-using System.Diagnostics;
-using System.Linq;
 
 class Program
 {
-    private const string AppPath = "C:\\Program Files\\Perimeter 81\\Perimeter81.exe";
-
     [STAThread]
     static void Main(string[] args)
     {
+        const string testSuiteName = "Harmony SASE Smoke Tests Suite";
+        
         try
         {
             // Run multiple tests with a single comprehensive report
             var report = new TestReport
             {
-                TestName = "Harmony SASE Smoke Tests Suite",
+                TestName = testSuiteName,
                 StartTime = DateTime.Now
             };
 
