@@ -3,56 +3,36 @@ using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 namespace SmokeTestsAgentWin.Helpers
 {
+    /// Handles launching and connecting to the Harmony SASE application.
     public class ApplicationLauncher
     {
         private const string AppPath = "C:\\Program Files\\Perimeter 81\\Perimeter81.exe";
         private const int StartupWaitTimeMs = 120100; // 2 minutes
-
-        private static readonly string[] ProcessNames = {
-            "Perimeter81.Service",
-            "Harmony SASE",
-            "Perimeter81.HelperService",
-            "Perimeter81"
-        };
+        private const int InitialCheckIntervalMs = 100;
+        private const int MaxCheckIntervalMs = 2000;
+        private const string QuickAccessWindowAutomationId = "QuickAccessWindow";
 
         /// Launches the Harmony SASE application and returns the main window.
         public static Window LaunchHarmonySaseApp()
         {
-            // Launch the application
-            var startInfo = new ProcessStartInfo(AppPath)
-            {
-                UseShellExecute = true
-            };
-            Process.Start(startInfo);
+            LaunchApplication();
 
             Console.WriteLine("Waiting for Perimeter81 to start (max 2 minutes)...");
             var automation = new UIA3Automation();
             var stopwatch = Stopwatch.StartNew();
 
-            // Use exponential backoff for more efficient polling
-            int checkInterval = 100; // Start with 100ms
-            const int maxInterval = 2000; // Max 2 seconds
+            var window = WaitForWindowWithExponentialBackoff(automation, stopwatch);
 
-            while (stopwatch.ElapsedMilliseconds < StartupWaitTimeMs)
+            if (window != null)
             {
-                var window = FindQuickAccessWindow(automation);
-                if (window != null)
-                {
-                    Console.WriteLine($"Found Quick Access window after {stopwatch.ElapsedMilliseconds}ms");
-                    Console.WriteLine($"Working with window: {window.Name}");
-                    return window;
-                }
-
-                // Exponential backoff: check more frequently at start, less frequently later
-                Thread.Sleep(checkInterval);
-                if (checkInterval < maxInterval)
-                {
-                    checkInterval = Math.Min(checkInterval * 2, maxInterval);
-                }
+                Console.WriteLine($"Found Quick Access window after {stopwatch.ElapsedMilliseconds}ms");
+                Console.WriteLine($"Working with window: {window.Name}");
+                return window;
             }
 
             throw new InvalidOperationException(
@@ -60,50 +40,62 @@ namespace SmokeTestsAgentWin.Helpers
                 "Ensure the application is installed and can be launched.");
         }
 
-        /// Searches for the QuickAccessWindow across all known process names.
-        private static Window? FindQuickAccessWindow(UIA3Automation automation)
+        private static void LaunchApplication()
         {
-            var desktop = automation.GetDesktop();
-
-            foreach (var processName in ProcessNames)
+            var startInfo = new ProcessStartInfo(AppPath)
             {
-                var processes = Process.GetProcessesByName(processName.Replace(".exe", ""));
+                UseShellExecute = true
+            };
+            Process.Start(startInfo);
+        }
 
-                foreach (var process in processes)
+        private static Window? WaitForWindowWithExponentialBackoff(UIA3Automation automation, Stopwatch stopwatch)
+        {
+            int checkInterval = InitialCheckIntervalMs;
+
+            while (stopwatch.ElapsedMilliseconds < StartupWaitTimeMs)
+            {
+                var window = FindQuickAccessWindow(automation);
+                if (window != null)
                 {
-                    try
-                    {
-                        // Wait briefly for process to initialize its main window
-                        if (process.MainWindowHandle == IntPtr.Zero)
-                        {
-                            process.WaitForInputIdle(500);
-                        }
-
-                        // Find windows belonging to this process
-                        var allWindows = desktop.FindAllChildren();
-                        foreach (var window in allWindows)
-                        {
-                            try
-                            {
-                                if (!string.IsNullOrEmpty(window.Name) && window.Name == "QuickAccessWindow")
-                                {
-                                    return window.AsWindow();
-                                }
-                            }
-                            catch
-                            {
-                                continue;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        continue;
-                    }
+                    return window;
                 }
+
+                Thread.Sleep(checkInterval);
+                checkInterval = Math.Min(checkInterval * 2, MaxCheckIntervalMs);
             }
 
             return null;
+        }
+
+        /// Searches for the QuickAccessWindow by AutomationId.
+        private static Window? FindQuickAccessWindow(UIA3Automation automation)
+        {
+            var desktop = automation.GetDesktop();
+            var allWindows = desktop.FindAllChildren();
+
+            // Search for QuickAccessWindow by AutomationId
+            var quickAccessWindow = allWindows
+                .FirstOrDefault(w => IsQuickAccessWindow(w));
+
+            if (quickAccessWindow != null)
+            {
+                return quickAccessWindow.AsWindow();
+            }
+
+            return null;
+        }
+
+        private static bool IsQuickAccessWindow(AutomationElement window)
+        {
+            try
+            {
+                return window.Properties.AutomationId == QuickAccessWindowAutomationId;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
