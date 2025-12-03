@@ -63,5 +63,40 @@ namespace SmokeTestsAgentWin.Tests
             
             fileManager.OpenInBrowser(reportPath);
         }
+
+        /// <summary>
+        /// Executes a test step with standardized error handling and reporting.
+        /// </summary>
+        /// <param name="stepName">The name of the step.</param>
+        /// <param name="action">The action to execute that returns true on success.</param>
+        /// <param name="successMessage">Message to log on success.</param>
+        /// <param name="failureMessage">Message to log on failure.</param>
+        /// <returns>True if the step passed, false otherwise.</returns>
+        public bool ExecuteStep(string stepName, Func<bool> action, string successMessage, string failureMessage)
+        {
+            var step = new TestStep
+            {
+                Name = stepName,
+                StartTime = DateTime.Now
+            };
+
+            try
+            {
+                step.Passed = action();
+                step.Details = step.Passed ? successMessage : failureMessage;
+            }
+            catch (Exception ex)
+            {
+                step.Passed = false;
+                step.Details = $"Exception: {ex.Message}";
+            }
+            finally
+            {
+                step.EndTime = DateTime.Now;
+                Steps.Add(step);
+            }
+
+            return step.Passed;
+        }
     }
 }

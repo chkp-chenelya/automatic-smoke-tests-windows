@@ -1,5 +1,7 @@
-﻿using SmokeTestsAgentWin.Tests;
+﻿using SmokeTestsAgentWin.Helpers;
+using SmokeTestsAgentWin.Tests;
 using System;
+using System.Linq;
 
 class Program
 {
@@ -7,7 +9,9 @@ class Program
     static void Main(string[] args)
     {
         const string testSuiteName = "Harmony SASE Smoke Tests Suite";
-        
+        const string quitFromHomePage = "Quit From Home Page";
+
+
         try
         {
             // Run multiple tests with a single comprehensive report
@@ -20,15 +24,26 @@ class Program
             int passedTests = 0;
             int totalTests = 0;
 
-            // Test 1
+            var mainWindow = ApplicationLauncher.LaunchHarmonySaseApp();
+
+            // Test 1: Quit From Home Page
+            mainWindow = ApplicationLauncher.LaunchHarmonySaseApp();
             Console.WriteLine("\n═══════════════════════════════════════");
-            Console.WriteLine("Test 1: Test");
+            Console.WriteLine("Test 1: Quit From Home Page");
             Console.WriteLine("═══════════════════════════════════════");
             var testCase1 = new TestReport.TestCase
             {
-                Name = "Test",
+                Name = quitFromHomePage,
                 StartTime = DateTime.Now
             };
+            bool quitHomeSuccess = QuitQuickAccessTests.RunQuitTestWithReport(mainWindow, report);
+            testCase1.EndTime = DateTime.Now;
+            testCase1.Passed = quitHomeSuccess;
+            testCase1.Steps = report.Steps.ToList();
+            report.TestCases.Add(testCase1);
+            report.Steps.Clear();
+            if (quitHomeSuccess) passedTests++;
+            Console.WriteLine($"Result: {(quitHomeSuccess ? "PASS ✓" : "FAIL ✗")}");
 
             // Generate and open HTML report
             Console.WriteLine("\n═══════════════════════════════════════");
