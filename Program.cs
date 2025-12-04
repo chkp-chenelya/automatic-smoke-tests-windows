@@ -43,7 +43,10 @@ class Program
             report.TestCases.Add(testCase1);
             report.Steps.Clear();
             totalTests++;
-            if (quitQuickAccessSuccess) passedTests++;
+            if (quitQuickAccessSuccess)
+            {
+                passedTests++;
+            } 
             Console.WriteLine($"Result: {(quitQuickAccessSuccess ? "PASS ✓" : "FAIL ✗")}");
 
             // Generate and open HTML report

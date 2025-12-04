@@ -37,7 +37,10 @@ namespace SmokeTestsAgentWin.Tests
                 "Successfully clicked Quit button",
                 "Failed to find or click Quit button");
 
-            if (!overallSuccess) return false;
+            if (!overallSuccess)
+            {
+                return false;
+            }
 
             // Step 2: Wait for confirmation dialog
             Window? dialogWindow = null;
@@ -57,7 +60,10 @@ namespace SmokeTestsAgentWin.Tests
                 "Confirmation dialog appeared",
                 "Confirmation dialog did not appear within timeout");
 
-            if (!overallSuccess || dialogWindow == null) return false;
+            if (!overallSuccess || dialogWindow == null)
+            {
+                return false;
+            }
 
             // Step 3: Click Quit button in confirmation dialog
             Console.WriteLine($"{LogPrefix}Confirmation dialog verified.");
