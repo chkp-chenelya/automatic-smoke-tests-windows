@@ -11,6 +11,8 @@ namespace SmokeTestsAgentWin.Tests
 {
     public static class UIHelpers
     {
+        private const int WindowSearchRetryIntervalMs = 500; // Interval between retry attempts when waiting for window
+        
         /// <summary>
         /// Finds and clicks a button by AutomationId in one operation.
         /// </summary>
@@ -110,7 +112,7 @@ namespace SmokeTestsAgentWin.Tests
             {
                 foundWindow = windowSearchFunc();
                 return foundWindow == null;
-            }, TimeSpan.FromMilliseconds(500), TimeSpan.FromSeconds(timeoutSeconds));
+            }, TimeSpan.FromMilliseconds(WindowSearchRetryIntervalMs), TimeSpan.FromSeconds(timeoutSeconds));
 
             if (foundWindow != null)
             {
