@@ -9,7 +9,7 @@ class Program
     static void Main(string[] args)
     {
         const string testSuiteName = "Harmony SASE Smoke Tests Suite";
-        const string quitFromHomePage = "Quit From Home Page";
+        const string quitFromQuickAccessWindow = "Quit From Quick Access Window";
 
 
         try
@@ -26,24 +26,25 @@ class Program
 
             var mainWindow = ApplicationLauncher.LaunchHarmonySaseApp();
 
-            // Test 1: Quit From Home Page
+            // Test 1: Quit From Quick Access Window
             mainWindow = ApplicationLauncher.LaunchHarmonySaseApp();
             Console.WriteLine("\n═══════════════════════════════════════");
-            Console.WriteLine("Test 1: Quit From Home Page");
+            Console.WriteLine("Test 1: Quit From Quick Access Window");
             Console.WriteLine("═══════════════════════════════════════");
             var testCase1 = new TestReport.TestCase
             {
-                Name = quitFromHomePage,
+                Name = quitFromQuickAccessWindow,
                 StartTime = DateTime.Now
             };
-            bool quitHomeSuccess = QuitQuickAccessTests.RunQuitTestWithReport(mainWindow, report);
+            bool quitQuickAccessSuccess = QuitQuickAccessTests.RunQuitTestWithReport(mainWindow, report);
             testCase1.EndTime = DateTime.Now;
-            testCase1.Passed = quitHomeSuccess;
+            testCase1.Passed = quitQuickAccessSuccess;
             testCase1.Steps = report.Steps.ToList();
             report.TestCases.Add(testCase1);
             report.Steps.Clear();
-            if (quitHomeSuccess) passedTests++;
-            Console.WriteLine($"Result: {(quitHomeSuccess ? "PASS ✓" : "FAIL ✗")}");
+            totalTests++;
+            if (quitQuickAccessSuccess) passedTests++;
+            Console.WriteLine($"Result: {(quitQuickAccessSuccess ? "PASS ✓" : "FAIL ✗")}");
 
             // Generate and open HTML report
             Console.WriteLine("\n═══════════════════════════════════════");
@@ -51,6 +52,7 @@ class Program
             Console.WriteLine("═══════════════════════════════════════");
             
             report.EndTime = DateTime.Now;
+            report.Passed = passedTests == totalTests;
             report.GenerateAndOpenReport();
         }
         catch (Exception ex)
