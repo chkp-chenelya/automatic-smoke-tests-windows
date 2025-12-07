@@ -2,6 +2,7 @@ using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Conditions;
 using FlaUI.Core.Definitions;
 using FlaUI.UIA3;
+using SmokeTestsAgentWin.Helpers;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -44,6 +45,41 @@ namespace SmokeTestsAgentWin.Tests
         private const int SupportScreenTimeoutSeconds = 6;
         private const int HomePageLoadDelayMs = 2000;
         private const int AppCloseDelayMs = 1000;
+
+        /// <summary>
+        /// Main entry point for running the SWG block test.
+        /// Launches the application and executes the test workflow.
+        /// </summary>
+        /// <param name="testCase">The test case to report results to</param>
+        public static void RunTest(TestReport.TestCase testCase)
+        {
+            var report = new TestReport { TestName = testCase.Name, StartTime = testCase.StartTime };
+            
+            Window? quickAccessWindow = null;
+            
+            try
+            {
+                // Launch application and get Quick Access window
+                quickAccessWindow = ApplicationLauncher.LaunchHarmonySaseApp();
+                
+                // Run the test and collect results
+                bool success = RunSwgBlockTestWithReport(quickAccessWindow, report);
+                
+                // Copy steps to test case
+                testCase.Steps.AddRange(report.Steps);
+                testCase.Success = success;
+                
+                if (!success)
+                {
+                    throw new Exception("One or more test steps failed");
+                }
+            }
+            finally
+            {
+                // Cleanup
+                quickAccessWindow?.Close();
+            }
+        }
 
         /// <summary>
         /// Runs the SWG block test and adds results to the report.

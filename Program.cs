@@ -7,6 +7,8 @@ class Program
     static void Main(string[] args)
     {
         const string testSuiteName = "Harmony SASE Smoke Tests Suite";
+        const string swgBlockTest = "SWG Block";
+        
         
         try
         {
@@ -20,15 +22,33 @@ class Program
             int passedTests = 0;
             int totalTests = 0;
 
-            // Test 1
+            // Test 1: SWG Block Test
             Console.WriteLine("\n═══════════════════════════════════════");
-            Console.WriteLine("Test 1: Test");
+            Console.WriteLine($"Test 1: {swgBlockTest}");
             Console.WriteLine("═══════════════════════════════════════");
             var testCase1 = new TestReport.TestCase
             {
-                Name = "Test",
+                Name = swgBlockTest,
                 StartTime = DateTime.Now
             };
+
+            try
+            {
+                SwgBlockTests.RunTest(testCase1);
+                passedTests++;
+            }
+            catch (Exception testEx)
+            {
+                testCase1.Success = false;
+                testCase1.ErrorMessage = testEx.Message;
+                Console.WriteLine($"Test failed: {testEx.Message}");
+            }
+            finally
+            {
+                testCase1.EndTime = DateTime.Now;
+                report.TestCases.Add(testCase1);
+                totalTests++;
+            }
 
             // Generate and open HTML report
             Console.WriteLine("\n═══════════════════════════════════════");

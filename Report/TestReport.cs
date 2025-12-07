@@ -33,6 +33,10 @@ namespace SmokeTestsAgentWin.Tests
 
             public bool Passed { get; set; }
 
+            public bool Success { get; set; } = true;
+
+            public string ErrorMessage { get; set; } = string.Empty;
+
             public List<TestStep> Steps { get; set; } = new List<TestStep>();
         }
 
@@ -49,6 +53,72 @@ namespace SmokeTestsAgentWin.Tests
             public bool Passed { get; set; }
 
             public string Details { get; set; } = string.Empty;
+        }
+
+        public bool ExecuteStep(string stepName, Action action, string successMessage = "", string failureMessage = "")
+        {
+            var step = new TestStep
+            {
+                Name = stepName,
+                StartTime = DateTime.Now
+            };
+
+            try
+            {
+                Console.WriteLine($"  Executing: {stepName}");
+                action();
+                step.Passed = true;
+                step.Details = string.IsNullOrEmpty(successMessage) ? "Success" : successMessage;
+                Console.WriteLine($"    ✓ {step.Details}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                step.Passed = false;
+                step.Details = string.IsNullOrEmpty(failureMessage) ? ex.Message : $"{failureMessage}: {ex.Message}";
+                Console.WriteLine($"    ✗ {step.Details}");
+                return false;
+            }
+            finally
+            {
+                step.EndTime = DateTime.Now;
+                Steps.Add(step);
+            }
+        }
+
+        public bool ExecuteStep(string stepName, Func<bool> action, string successMessage = "", string failureMessage = "")
+        {
+            var step = new TestStep
+            {
+                Name = stepName,
+                StartTime = DateTime.Now
+            };
+
+            try
+            {
+                Console.WriteLine($"  Executing: {stepName}");
+                bool result = action();
+                if (!result)
+                {
+                    throw new Exception(string.IsNullOrEmpty(failureMessage) ? "Step returned false" : failureMessage);
+                }
+                step.Passed = true;
+                step.Details = string.IsNullOrEmpty(successMessage) ? "Success" : successMessage;
+                Console.WriteLine($"    ✓ {step.Details}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                step.Passed = false;
+                step.Details = string.IsNullOrEmpty(failureMessage) ? ex.Message : $"{failureMessage}: {ex.Message}";
+                Console.WriteLine($"    ✗ {step.Details}");
+                return false;
+            }
+            finally
+            {
+                step.EndTime = DateTime.Now;
+                Steps.Add(step);
+            }
         }
 
         public void GenerateAndOpenReport()
