@@ -24,18 +24,16 @@ namespace SmokeTestsAgentWin.Tests
         private const string HomeConnectButtonAutomationId = "HomeConnectButton";
 
         // Step names
-        private const string Step1Name = "Click Support button in Quick Access";
-        private const string Step2Name = "Wait for Support screen to load";
-        private const string Step3Name = "Click Home button";
-        private const string Step4Name = "Click Connect button to establish VPN";
-        private const string Step5Name = "Wait for VPN connection (button changes to Disconnect)";
-        private const string Step6Name = "Verify website is blocked by VPN";
-        private const string Step7Name = "Click Close button to close app";
+        private const string Step1 = "Click Support button in Quick Access";
+        private const string Step2 = "Wait for Support screen to load";
+        private const string Step3 = "Click Home button";
+        private const string Step4 = "Click Connect button to establish VPN";
+        private const string Step5 = "Wait for VPN connection (button changes to Disconnect)";
+        private const string Step6 = "Verify website is blocked by VPN";
+        private const string Step7 = "Click Close button to close app";
 
         // Window and button names
         private const string HarmonySaseWindowName = "Harmony SASE";
-        private const string HomeButtonName = "Home";
-        private const string ConnectButtonName = "Connect";
         private const string DisconnectButtonName = "Disconnect";
         private const string CloseButtonAutomationId = "CloseButton";
 
@@ -43,7 +41,6 @@ namespace SmokeTestsAgentWin.Tests
         private const string BlockedTestUrl = "https://www.888.com/";
         private const int MaxVpnConnectionWaitMs = 120000; // 2 minutes
         private const int VpnCheckIntervalMs = 2000;
-        private const int BrowserVerificationWaitMs = 10000;
         private const int SupportScreenTimeoutSeconds = 6;
         private const int HomePageLoadDelayMs = 2000;
         private const int AppCloseDelayMs = 1000;
@@ -68,7 +65,7 @@ namespace SmokeTestsAgentWin.Tests
 
             // Step 1: Click initial Quit button From Quick Access
             overallSuccess &= report.ExecuteStep(
-                Step1Name,
+                Step1,
                 () => UIHelpers.FindAndClickButtonByAutomationId(quickAccessWindow, SupportButtonAutomationId, LogPrefix),
                 "Successfully clicked Quit button",
                 "Failed to find or click Quit button");
@@ -81,7 +78,7 @@ namespace SmokeTestsAgentWin.Tests
             // Step 2: Wait for Support screen to load (find Harmony SASE window)
             Window? harmonySaseWindow = null;
             overallSuccess &= report.ExecuteStep(
-                Step2Name,
+                Step2,
                 () =>
                 {
                     harmonySaseWindow = UIHelpers.WaitForWindowByAutomationId(automation, HarmonySaseMainWindowAutomationId, SupportScreenTimeoutSeconds, LogPrefix);
@@ -97,7 +94,7 @@ namespace SmokeTestsAgentWin.Tests
 
             // Step 3: Click Home button
             overallSuccess &= report.ExecuteStep(
-                Step3Name,
+                Step3,
                 () =>
                 {
                     var desktop = automation.GetDesktop();
@@ -111,10 +108,6 @@ namespace SmokeTestsAgentWin.Tests
                     }
 
                     Console.WriteLine($"{LogPrefix}Window found: {window.Name}, AutomationId: {window.AutomationId}");
-                    
-                    // Dump window structure to see all available buttons
-                    Console.WriteLine($"{LogPrefix}Dumping all buttons before attempting to find Home button...");
-                    DumpWindowStructure(window);
                     
                     // Try to find the Home button
                     var result = UIHelpers.FindAndClickButtonByAutomationId(window, MainWindowHomeButtonAutomationId, LogPrefix);
@@ -136,7 +129,7 @@ namespace SmokeTestsAgentWin.Tests
 
             // Step 4: Click Connect button
             overallSuccess &= report.ExecuteStep(
-                Step4Name,
+                Step4,
                 () =>
                 {
                     Thread.Sleep(HomePageLoadDelayMs); // Wait for Home page to load
@@ -188,7 +181,7 @@ namespace SmokeTestsAgentWin.Tests
 
             // Step 5: Wait for VPN connection (button changes to Disconnect)
             overallSuccess &= report.ExecuteStep(
-                Step5Name,
+                Step5,
                 () =>
                 {
                     var cf = new ConditionFactory(new UIA3PropertyLibrary());
@@ -236,7 +229,7 @@ namespace SmokeTestsAgentWin.Tests
 
             // Step 6: Verify website is blocked by VPN
             overallSuccess &= report.ExecuteStep(
-                Step6Name,
+                Step6,
                 () =>
                 {
                     Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedTestUrl} using curl to verify VPN blocking...");
@@ -312,7 +305,7 @@ namespace SmokeTestsAgentWin.Tests
 
             // Step 7: Click Close button to close the app
             overallSuccess &= report.ExecuteStep(
-                Step7Name,
+                Step7,
                 () =>
                 {
                     var desktop = automation.GetDesktop();
@@ -344,30 +337,6 @@ namespace SmokeTestsAgentWin.Tests
                 "Failed to find or click Close button");
 
             return overallSuccess;
-        }
-
-        private static void DumpWindowStructure(AutomationElement window)
-        {
-            Console.WriteLine($"{LogPrefix}=== Window Structure Dump ===");
-            Console.WriteLine($"{LogPrefix}Window: {window.Name}, AutomationId: {window.AutomationId}");
-            
-            var cf = new ConditionFactory(new UIA3PropertyLibrary());
-            var allElements = window.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-            
-            Console.WriteLine($"{LogPrefix}Found {allElements.Length} buttons:");
-            foreach (var element in allElements)
-            {
-                try
-                {
-                    Console.WriteLine($"{LogPrefix}  - Name: '{element.Name}', AutomationId: '{element.AutomationId}', ControlType: {element.ControlType}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"{LogPrefix}  - Error reading element: {ex.Message}");
-                }
-            }
-            
-            Console.WriteLine($"{LogPrefix}=== End of Structure Dump ===");
         }
     }
 }
