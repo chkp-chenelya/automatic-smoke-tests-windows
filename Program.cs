@@ -1,4 +1,5 @@
-﻿using SmokeTestsAgentWin.Helpers;
+﻿using FlaUI.Core.AutomationElements;
+using SmokeTestsAgentWin.Helpers;
 using SmokeTestsAgentWin.Tests;
 using System;
 using System.Diagnostics;
@@ -22,10 +23,8 @@ class Program
         const string swgBlockTest = "SWG Block";
         const string quitFromQuickAccessWindow = "Quit From Quick Access Window";
 
-
         try
         {
-            // Run multiple tests with a single comprehensive report
             var report = new TestReport
             {
                 TestName = testSuiteName,
@@ -36,56 +35,22 @@ class Program
             int totalTests = 0;
 
             // Test 1: SWG Block Test
-            var mainWindow = ApplicationLauncher.LaunchHarmonySaseApp();
-            Console.WriteLine("\n═══════════════════════════════════════");
-            Console.WriteLine($"Test 1: {swgBlockTest}");
-            Console.WriteLine("═══════════════════════════════════════");
-            var testCase1 = new TestReport.TestCase
-            {
-                Name = swgBlockTest,
-                StartTime = DateTime.Now
-            };
-
-            try
-            {
-                bool quitQuickAccessSuccess2 = SwgBlockTests.RunSwgBlockTestWithReport(mainWindow, report);
-                passedTests++;
-            }
-            catch (Exception testEx)
-            {
-                testCase1.Passed = false;
-                testCase1.ErrorMessage = testEx.Message;
-                Console.WriteLine($"Test failed: {testEx.Message}");
-            }
-            finally
-            {
-                testCase1.EndTime = DateTime.Now;
-                report.TestCases.Add(testCase1);
-                totalTests++;
-            }
+            passedTests += RunTest(
+                testName: swgBlockTest,
+                testNumber: 1,
+                report: report,
+                testRunner: (mainWindow) => SwgBlockTests.RunSwgBlockTestWithReport(mainWindow, report),
+                ref totalTests
+            );
 
             // Test 2: Quit From Quick Access Window
-            var mainWindow2 = ApplicationLauncher.LaunchHarmonySaseApp();
-            Console.WriteLine("\n═══════════════════════════════════════");
-            Console.WriteLine($"Test 2: {quitFromQuickAccessWindow}");
-            Console.WriteLine("═══════════════════════════════════════");
-            var testCase2 = new TestReport.TestCase
-            {
-                Name = quitFromQuickAccessWindow,
-                StartTime = DateTime.Now
-            };
-            bool quitQuickAccessSuccess = QuitQuickAccessTests.RunQuitTestWithReport(mainWindow2, report);
-            testCase2.EndTime = DateTime.Now;
-            testCase2.Passed = quitQuickAccessSuccess;
-            testCase2.Steps = report.Steps.ToList();
-            report.TestCases.Add(testCase2);
-            report.Steps.Clear();
-            totalTests++;
-            if (quitQuickAccessSuccess)
-            {
-                passedTests++;
-            }
-            Console.WriteLine($"Result: {(quitQuickAccessSuccess ? "PASS ✓" : "FAIL ✗")}");
+            passedTests += RunTest(
+                testName: quitFromQuickAccessWindow,
+                testNumber: 2,
+                report: report,
+                testRunner: (mainWindow) => QuitQuickAccessTests.RunQuitTestWithReport(mainWindow, report),
+                ref totalTests
+            );
 
             // Generate and open HTML report
             Console.WriteLine("\n═══════════════════════════════════════");
@@ -106,6 +71,59 @@ class Program
             // Ensure application is closed whether tests pass or fail
             EnsureApplicationClosed();
         }
+    }
+
+    /// <summary>
+    /// Runs a single test and updates the test report.
+    /// </summary>
+    /// <param name="testName">The name of the test to run</param>
+    /// <param name="testNumber">The sequential number of the test</param>
+    /// <param name="report">The test report to update</param>
+    /// <param name="testRunner">The function that executes the test</param>
+    /// <param name="totalTests">Reference to the total test counter</param>
+    /// <returns>1 if the test passed, 0 otherwise</returns>
+    private static int RunTest(
+        string testName,
+        int testNumber,
+        TestReport report,
+        Func<Window, bool> testRunner,
+        ref int totalTests)
+    {
+        var mainWindow = ApplicationLauncher.LaunchHarmonySaseApp();
+        Console.WriteLine("\n═══════════════════════════════════════");
+        Console.WriteLine($"Test {testNumber}: {testName}");
+        Console.WriteLine("═══════════════════════════════════════");
+
+        var testCase = new TestReport.TestCase
+        {
+            Name = testName,
+            StartTime = DateTime.Now
+        };
+
+        bool testPassed = false;
+
+        try
+        {
+            testPassed = testRunner(mainWindow);
+            testCase.Passed = testPassed;
+            testCase.Steps = report.Steps.ToList();
+        }
+        catch (Exception testEx)
+        {
+            testCase.Passed = false;
+            testCase.ErrorMessage = testEx.Message;
+            Console.WriteLine($"Test failed: {testEx.Message}");
+        }
+        finally
+        {
+            testCase.EndTime = DateTime.Now;
+            report.TestCases.Add(testCase);
+            report.Steps.Clear();
+            totalTests++;
+        }
+
+        Console.WriteLine($"Result: {(testPassed ? "PASS ✓" : "FAIL ✗")}");
+        return testPassed ? 1 : 0;
     }
 
     /// <summary>
