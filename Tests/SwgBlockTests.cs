@@ -1,3 +1,4 @@
+using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Conditions;
 using FlaUI.Core.Definitions;
@@ -63,7 +64,7 @@ namespace SmokeTestsAgentWin.Tests
             var automation = quickAccessWindow.Automation;
             bool overallSuccess = true;
 
-            // Step 1: Click initial Quit button From Quick Access
+            // Step 1: Click Support button in Quick Access
             overallSuccess &= report.ExecuteStep(
                 Step1,
                 () => UIHelpers.FindAndClickButtonByAutomationId(quickAccessWindow, SupportButtonAutomationId, LogPrefix),
@@ -75,7 +76,7 @@ namespace SmokeTestsAgentWin.Tests
                 return false;
             }
 
-            // Step 2: Wait for Support screen to load (find Harmony SASE window)
+            // Step 2: Wait for Support screen to load
             Window? harmonySaseWindow = null;
             overallSuccess &= report.ExecuteStep(
                 Step2,
@@ -89,36 +90,13 @@ namespace SmokeTestsAgentWin.Tests
 
             if (!overallSuccess || harmonySaseWindow == null)
             {
-                return false;
+               return false;
             }
 
             // Step 3: Click Home button
             overallSuccess &= report.ExecuteStep(
                 Step3,
-                () =>
-                {
-                    var desktop = automation.GetDesktop();
-                    var cf = new ConditionFactory(new UIA3PropertyLibrary());
-                    var window = desktop.FindFirstChild(cf => cf.ByAutomationId(HarmonySaseMainWindowAutomationId).And(cf.ByControlType(ControlType.Window)))?.AsWindow();
-
-                    if (window == null)
-                    {
-                        Console.WriteLine($"{LogPrefix}Could not find Harmony SASE window");
-                        return false;
-                    }
-
-                    Console.WriteLine($"{LogPrefix}Window found: {window.Name}, AutomationId: {window.AutomationId}");
-                    
-                    // Try to find the Home button
-                    var result = UIHelpers.FindAndClickButtonByAutomationId(window, MainWindowHomeButtonAutomationId, LogPrefix);
-                    
-                    if (!result)
-                    {
-                        Console.WriteLine($"{LogPrefix}Failed to find Home button by AutomationId '{MainWindowHomeButtonAutomationId}'");
-                    }
-                    
-                    return result;
-                },
+                () => ClickButtonInMainWindow(automation, MainWindowHomeButtonAutomationId),
                 "Home button clicked successfully",
                 "Failed to find or click Home button");
 
@@ -130,96 +108,20 @@ namespace SmokeTestsAgentWin.Tests
             // Step 4: Click Connect button
             overallSuccess &= report.ExecuteStep(
                 Step4,
-                () =>
-                {
-                    Thread.Sleep(HomePageLoadDelayMs); // Wait for Home page to load
-
-                    var desktop = automation.GetDesktop();
-                    var cf = new ConditionFactory(new UIA3PropertyLibrary());
-                    var window = desktop.FindFirstChild(cf => cf.ByAutomationId(HarmonySaseMainWindowAutomationId).And(cf.ByControlType(ControlType.Window)))?.AsWindow();
-
-                    if (window == null)
-                    {
-                        Console.WriteLine($"{LogPrefix}Could not find Harmony SASE window");
-                        return false;
-                    }
-
-                    // Navigate: Window -> Tab -> Custom -> Button with AutomationId
-                    var tabElement = window.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-                    if (tabElement == null)
-                    {
-                        Console.WriteLine($"{LogPrefix}Could not find Tab element");
-                        return false;
-                    }
-
-                    var customElement = tabElement.FindFirstDescendant(cf => cf.ByControlType(ControlType.Custom));
-                    if (customElement == null)
-                    {
-                        Console.WriteLine($"{LogPrefix}Could not find Custom element under Tab");
-                        return false;
-                    }
-
-                    var connectButton = customElement.FindFirstDescendant(cf =>
-                        cf.ByControlType(ControlType.Button).And(cf.ByAutomationId(HomeConnectButtonAutomationId)));
-
-                    if (connectButton == null)
-                    {
-                        Console.WriteLine($"{LogPrefix}Could not find Connect button with AutomationId '{HomeConnectButtonAutomationId}'");
-                        return false;
-                    }
-
-                    Console.WriteLine($"{LogPrefix}Found Connect button, attempting to click...");
-                    return UIHelpers.TryClickButton(connectButton, LogPrefix);
-                },
+                () => ClickConnectButton(automation),
                 "Connect button clicked successfully",
                 "Failed to find or click Connect button");
 
             if (!overallSuccess)
             {
                 return false;
-            }
+            } 
 
-            // Step 5: Wait for VPN connection (button changes to Disconnect)
+            // Step 5: Wait for VPN connection
             overallSuccess &= report.ExecuteStep(
                 Step5,
-                () =>
-                {
-                    var cf = new ConditionFactory(new UIA3PropertyLibrary());
-                    var stopwatch = Stopwatch.StartNew();
-
-                    while (stopwatch.ElapsedMilliseconds < MaxVpnConnectionWaitMs)
-                    {
-                        var desktop = automation.GetDesktop();
-                        var freshWindow = desktop.FindFirstChild(cf => cf.ByAutomationId(HarmonySaseMainWindowAutomationId).And(cf.ByControlType(ControlType.Window)))?.AsWindow();
-
-                        if (freshWindow != null)
-                        {
-                            var tabElement = freshWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-                            if (tabElement != null)
-                            {
-                                var customElement = tabElement.FindFirstDescendant(cf => cf.ByControlType(ControlType.Custom));
-                                if (customElement != null)
-                                {
-                                    var disconnectButton = customElement.FindFirstDescendant(cf =>
-                                        cf.ByControlType(ControlType.Button).And(cf.ByName(DisconnectButtonName)));
-
-                                    if (disconnectButton != null)
-                                    {
-                                        var elapsedSeconds = stopwatch.Elapsed.TotalSeconds;
-                                        Console.WriteLine($"{LogPrefix}VPN connected! Disconnect button appeared after {elapsedSeconds:F1} seconds");
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-
-                        Thread.Sleep(VpnCheckIntervalMs); // Check every 2 seconds
-                    }
-
-                    Console.WriteLine($"{LogPrefix}Timeout: Disconnect button did not appear within 2 minutes");
-                    return false;
-                },
-                $"VPN connected successfully",
+                () => WaitForVpnConnection(automation),
+                "VPN connected successfully",
                 "Timeout: Disconnect button did not appear within 2 minutes");
 
             if (!overallSuccess)
@@ -230,113 +132,246 @@ namespace SmokeTestsAgentWin.Tests
             // Step 6: Verify website is blocked by VPN
             overallSuccess &= report.ExecuteStep(
                 Step6,
-                () =>
-                {
-                    Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedTestUrl} using curl to verify VPN blocking...");
-
-                    try
-                    {
-                        var curlProcess = new ProcessStartInfo
-                        {
-                            FileName = "curl",
-                            Arguments = $"-I {BlockedTestUrl}",
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            CreateNoWindow = true
-                        };
-
-                        using (var process = Process.Start(curlProcess))
-                        {
-                            if (process == null)
-                            {
-                                Console.WriteLine($"{LogPrefix}Failed to start curl process");
-                                return false;
-                            }
-
-                            var output = process.StandardOutput.ReadToEnd();
-                            var error = process.StandardError.ReadToEnd();
-                            process.WaitForExit(15000); // 15 second timeout
-
-                            Console.WriteLine($"{LogPrefix}Curl output:\n{output}");
-                            if (!string.IsNullOrEmpty(error))
-                            {
-                                Console.WriteLine($"{LogPrefix}Curl error: {error}");
-                            }
-
-                            // Check for 403 Forbidden status
-                            if (output.Contains("403 Forbidden") || output.Contains("Firefly-Pep-Sessionid"))
-                            {
-                                Console.WriteLine($"{LogPrefix}✓ BLOCKED: Received 403 Forbidden response detected (Harmony SASE block)");
-                                return true;
-                            }
-                            // Check for 200 OK (not blocked)
-                            else if (output.Contains("200 OK") || output.Contains("HTTP/1.1 200"))
-                            {
-                                Console.WriteLine($"{LogPrefix}✗ NOT BLOCKED: Received 200 OK response - website is accessible");
-                                return false;
-                            }
-                            // Connection errors mean blocked
-                            else if (!string.IsNullOrEmpty(error) || output.Contains("Could not resolve host"))
-                            {
-                                Console.WriteLine($"{LogPrefix}✓ BLOCKED: Connection error");
-                                return true;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"{LogPrefix}Unexpected response - check output above");
-                                return false;
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"{LogPrefix}Error executing curl: {ex.Message}");
-                        throw;
-                    }
-                },
+                () => VerifyWebsiteBlocked(),
                 "Website is blocked by VPN (verified via curl - 403 Forbidden)",
                 "Failed to verify website blocking");
 
             if (!overallSuccess)
             {
-                return false;
+               return false;
             }
 
             // Step 7: Click Close button to close the app
             overallSuccess &= report.ExecuteStep(
                 Step7,
-                () =>
-                {
-                    var desktop = automation.GetDesktop();
-                    var cf = new ConditionFactory(new UIA3PropertyLibrary());
-                    var window = desktop.FindFirstChild(cf => cf.ByName(HarmonySaseWindowName).And(cf.ByControlType(ControlType.Window)))?.AsWindow();
-
-                    if (window == null)
-                    {
-                        Console.WriteLine($"{LogPrefix}Could not find Harmony SASE window");
-                        return false;
-                    }
-
-                    // Find the Close button by AutomationId
-                    var result = UIHelpers.FindAndClickButtonByAutomationId(window, CloseButtonAutomationId, LogPrefix);
-                    
-                    if (result)
-                    {
-                        Console.WriteLine($"{LogPrefix}Close button clicked successfully");
-                        Thread.Sleep(AppCloseDelayMs); // Wait for app to close
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{LogPrefix}Failed to find or click Close button");
-                    }
-                    
-                    return result;
-                },
+                () => CloseMainWindow(automation),
                 "Close button clicked successfully, app closed",
                 "Failed to find or click Close button");
 
             return overallSuccess;
+        }
+
+        /// <summary>
+        /// Finds the Harmony SASE main window by automation ID.
+        /// </summary>
+        private static Window? FindMainWindow(AutomationBase automation)
+        {
+            var desktop = automation.GetDesktop();
+            var cf = new ConditionFactory(new UIA3PropertyLibrary());
+            return desktop.FindFirstChild(cf => cf.ByAutomationId(HarmonySaseMainWindowAutomationId)
+                .And(cf.ByControlType(ControlType.Window)))?.AsWindow();
+        }
+
+        /// <summary>
+        /// Finds the Tab -> Custom element structure used for VPN buttons.
+        /// </summary>
+        private static AutomationElement? FindTabCustomElement(Window window)
+        {
+            var cf = new ConditionFactory(new UIA3PropertyLibrary());
+            var tabElement = window.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
+            if (tabElement == null)
+            {
+                Console.WriteLine($"{LogPrefix}Could not find Tab element");
+                return null;
+            }
+
+            var customElement = tabElement.FindFirstDescendant(cf => cf.ByControlType(ControlType.Custom));
+            if (customElement == null)
+            {
+                Console.WriteLine($"{LogPrefix}Could not find Custom element under Tab");
+                return null;
+            }
+
+            return customElement;
+        }
+
+        /// <summary>
+        /// Clicks a button in the main window by automation ID.
+        /// </summary>
+        private static bool ClickButtonInMainWindow(AutomationBase automation, string buttonAutomationId)
+        {
+            var window = FindMainWindow(automation);
+            if (window == null)
+            {
+                Console.WriteLine($"{LogPrefix}Could not find Harmony SASE window");
+                return false;
+            }
+
+            Console.WriteLine($"{LogPrefix}Window found: {window.Name}, AutomationId: {window.AutomationId}");
+            var result = UIHelpers.FindAndClickButtonByAutomationId(window, buttonAutomationId, LogPrefix);
+            
+            if (!result)
+            {
+                Console.WriteLine($"{LogPrefix}Failed to find button by AutomationId '{buttonAutomationId}'");
+            }
+            
+            return result;
+        }
+
+        /// <summary>
+        /// Clicks the Connect button to establish VPN connection.
+        /// </summary>
+        private static bool ClickConnectButton(AutomationBase automation)
+        {
+            Thread.Sleep(HomePageLoadDelayMs);
+
+            var window = FindMainWindow(automation);
+            if (window == null)
+            {
+                Console.WriteLine($"{LogPrefix}Could not find Harmony SASE window");
+                return false;
+            }
+
+            var customElement = FindTabCustomElement(window);
+            if (customElement == null) return false;
+
+            var cf = new ConditionFactory(new UIA3PropertyLibrary());
+            var connectButton = customElement.FindFirstDescendant(cf =>
+                cf.ByControlType(ControlType.Button).And(cf.ByAutomationId(HomeConnectButtonAutomationId)));
+
+            if (connectButton == null)
+            {
+                Console.WriteLine($"{LogPrefix}Could not find Connect button with AutomationId '{HomeConnectButtonAutomationId}'");
+                return false;
+            }
+
+            Console.WriteLine($"{LogPrefix}Found Connect button, attempting to click...");
+            return UIHelpers.TryClickButton(connectButton, LogPrefix);
+        }
+
+        /// <summary>
+        /// Waits for VPN connection by checking for the Disconnect button.
+        /// </summary>
+        private static bool WaitForVpnConnection(AutomationBase automation)
+        {
+            var cf = new ConditionFactory(new UIA3PropertyLibrary());
+            var stopwatch = Stopwatch.StartNew();
+
+            while (stopwatch.ElapsedMilliseconds < MaxVpnConnectionWaitMs)
+            {
+                var window = FindMainWindow(automation);
+                if (window != null)
+                {
+                    var customElement = FindTabCustomElement(window);
+                    if (customElement != null)
+                    {
+                        var disconnectButton = customElement.FindFirstDescendant(cf =>
+                            cf.ByControlType(ControlType.Button).And(cf.ByName(DisconnectButtonName)));
+
+                        if (disconnectButton != null)
+                        {
+                            var elapsedSeconds = stopwatch.Elapsed.TotalSeconds;
+                            Console.WriteLine($"{LogPrefix}VPN connected! Disconnect button appeared after {elapsedSeconds:F1} seconds");
+                            return true;
+                        }
+                    }
+                }
+
+                Thread.Sleep(VpnCheckIntervalMs);
+            }
+
+            Console.WriteLine($"{LogPrefix}Timeout: Disconnect button did not appear within 2 minutes");
+            return false;
+        }
+
+        /// <summary>
+        /// Verifies that a website is blocked by the VPN using curl.
+        /// </summary>
+        private static bool VerifyWebsiteBlocked()
+        {
+            Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedTestUrl} using curl to verify VPN blocking...");
+
+            try
+            {
+                var curlProcess = new ProcessStartInfo
+                {
+                    FileName = "curl",
+                    Arguments = $"-I {BlockedTestUrl}",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using (var process = Process.Start(curlProcess))
+                {
+                    if (process == null)
+                    {
+                        Console.WriteLine($"{LogPrefix}Failed to start curl process");
+                        return false;
+                    }
+
+                    var output = process.StandardOutput.ReadToEnd();
+                    var error = process.StandardError.ReadToEnd();
+                    process.WaitForExit(15000);
+
+                    Console.WriteLine($"{LogPrefix}Curl output:\n{output}");
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        Console.WriteLine($"{LogPrefix}Curl error: {error}");
+                    }
+
+                    // Check for 403 Forbidden (blocked)
+                    if (output.Contains("403 Forbidden") || output.Contains("Firefly-Pep-Sessionid"))
+                    {
+                        Console.WriteLine($"{LogPrefix}✓ BLOCKED: Received 403 Forbidden response detected (Harmony SASE block)");
+                        return true;
+                    }
+                    // Check for 200 OK (not blocked)
+                    else if (output.Contains("200 OK") || output.Contains("HTTP/1.1 200"))
+                    {
+                        Console.WriteLine($"{LogPrefix}✗ NOT BLOCKED: Received 200 OK response - website is accessible");
+                        return false;
+                    }
+                    // Connection errors mean blocked
+                    else if (!string.IsNullOrEmpty(error) || output.Contains("Could not resolve host"))
+                    {
+                        Console.WriteLine($"{LogPrefix}✓ BLOCKED: Connection error");
+                        return true;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{LogPrefix}Unexpected response - check output above");
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{LogPrefix}Error executing curl: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Closes the main Harmony SASE window.
+        /// </summary>
+        private static bool CloseMainWindow(AutomationBase automation)
+        {
+            var desktop = automation.GetDesktop();
+            var cf = new ConditionFactory(new UIA3PropertyLibrary());
+            var window = desktop.FindFirstChild(cf => cf.ByName(HarmonySaseWindowName)
+                .And(cf.ByControlType(ControlType.Window)))?.AsWindow();
+
+            if (window == null)
+            {
+                Console.WriteLine($"{LogPrefix}Could not find Harmony SASE window");
+                return false;
+            }
+
+            var result = UIHelpers.FindAndClickButtonByAutomationId(window, CloseButtonAutomationId, LogPrefix);
+            
+            if (result)
+            {
+                Console.WriteLine($"{LogPrefix}Close button clicked successfully");
+                Thread.Sleep(AppCloseDelayMs);
+            }
+            else
+            {
+                Console.WriteLine($"{LogPrefix}Failed to find or click Close button");
+            }
+            
+            return result;
         }
     }
 }
