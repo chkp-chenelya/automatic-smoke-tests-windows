@@ -82,6 +82,7 @@ namespace SmokeTestsAgentWin.Tests
                 Step2,
                 () =>
                 {
+                    Thread.Sleep(HomePageLoadDelayMs);
                     harmonySaseWindow = UIHelpers.WaitForWindowByAutomationId(automation, HarmonySaseMainWindowAutomationId, SupportScreenTimeoutSeconds, LogPrefix);
                     return harmonySaseWindow != null;
                 },
