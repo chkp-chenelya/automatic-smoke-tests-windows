@@ -210,7 +210,7 @@ namespace SmokeTestsAgentWin.Tests
                     }
 
                     Console.WriteLine($"{LogPrefix}Found Connect button, attempting to click...");
-                    return UIHelpers.FindAndClickButtonByAutomationId(customElement, HomeConnectButtonAutomationId, LogPrefix);
+                    return UIHelpers.TryClickButton(connectButton, LogPrefix);
                 },
                 "Connect button clicked successfully",
                 "Failed to find or click Connect button");

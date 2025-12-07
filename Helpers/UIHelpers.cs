@@ -68,18 +68,36 @@ namespace SmokeTestsAgentWin.Tests
             }, timeoutSeconds, logPrefix);
         }
 
-        private static bool TryClickButton(AutomationElement element, string logPrefix = "")
+        /// <summary>
+        /// Tries to click a button element using Invoke pattern first, then Click as fallback.
+        /// </summary>
+        /// <param name="element">The button element to click.</param>
+        /// <param name="logPrefix">Optional prefix for log messages.</param>
+        /// <returns>True if the button was clicked successfully, false otherwise.</returns>
+        public static bool TryClickButton(AutomationElement element, string logPrefix = "")
         {
+            // Try Invoke pattern first
             try
             {
-                Console.WriteLine($"{logPrefix}Using Click()...");
-                element.Click();
+                var invokePattern = element.Patterns.Invoke.Pattern;
+                Console.WriteLine($"{logPrefix}Using Invoke pattern...");
+                invokePattern.Invoke();
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception invokeEx)
             {
-                Console.WriteLine($"{logPrefix}Click failed: {ex.Message}");
-                return false;
+                Console.WriteLine($"{logPrefix}Invoke pattern failed: {invokeEx.Message}, trying Click...");
+                try
+                {
+                    Console.WriteLine($"{logPrefix}Using Click()...");
+                    element.Click();
+                    return true;
+                }
+                catch (Exception clickEx)
+                {
+                    Console.WriteLine($"{logPrefix}Click also failed: {clickEx.Message}");
+                    return false;
+                }
             }
         }
 
