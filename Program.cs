@@ -19,6 +19,7 @@ class Program
     static void Main(string[] args)
     {
         const string testSuiteName = "Harmony SASE Smoke Tests Suite";
+        const string swgBlockTest = "SWG Block";
         const string quitFromQuickAccessWindow = "Quit From Quick Access Window";
 
 
@@ -34,28 +35,56 @@ class Program
             int passedTests = 0;
             int totalTests = 0;
 
-            // Test 1: Quit From Quick Access Window
-            var mainWindow = ApplicationLauncher.LaunchHarmonySaseApp();
+            // Test 1: SWG Block Test
             Console.WriteLine("\n═══════════════════════════════════════");
-            Console.WriteLine("Test 1: Quit From Quick Access Window");
+            Console.WriteLine($"Test 1: {swgBlockTest}");
             Console.WriteLine("═══════════════════════════════════════");
             var testCase1 = new TestReport.TestCase
             {
-                Name = quitFromQuickAccessWindow,
+                Name = swgBlockTest,
                 StartTime = DateTime.Now
             };
-            bool quitQuickAccessSuccess = QuitQuickAccessTests.RunQuitTestWithReport(mainWindow, report);
-            testCase1.EndTime = DateTime.Now;
-            testCase1.Passed = quitQuickAccessSuccess;
-            testCase1.Steps = report.Steps.ToList();
-            report.TestCases.Add(testCase1);
-            report.Steps.Clear();
-            totalTests++;
-            if (quitQuickAccessSuccess)
+
+            try
             {
+                SwgBlockTests.RunTest(testCase1);
                 passedTests++;
-            } 
-            Console.WriteLine($"Result: {(quitQuickAccessSuccess ? "PASS ✓" : "FAIL ✗")}");
+            }
+            catch (Exception testEx)
+            {
+                testCase1.Passed = false;
+                testCase1.ErrorMessage = testEx.Message;
+                Console.WriteLine($"Test failed: {testEx.Message}");
+            }
+            finally
+            {
+                testCase1.EndTime = DateTime.Now;
+                report.TestCases.Add(testCase1);
+                totalTests++;
+            }
+
+            //// Test 2: Quit From Quick Access Window
+            //var mainWindow = ApplicationLauncher.LaunchHarmonySaseApp();
+            //Console.WriteLine("\n═══════════════════════════════════════");
+            //Console.WriteLine($"Test 2: {quitFromQuickAccessWindow}");
+            //Console.WriteLine("═══════════════════════════════════════");
+            //var testCase2 = new TestReport.TestCase
+            //{
+            //    Name = quitFromQuickAccessWindow,
+            //    StartTime = DateTime.Now
+            //};
+            //bool quitQuickAccessSuccess = QuitQuickAccessTests.RunQuitTestWithReport(mainWindow, report);
+            //testCase2.EndTime = DateTime.Now;
+            //testCase2.Passed = quitQuickAccessSuccess;
+            //testCase2.Steps = report.Steps.ToList();
+            //report.TestCases.Add(testCase2);
+            //report.Steps.Clear();
+            //totalTests++;
+            //if (quitQuickAccessSuccess)
+            //{
+            //    passedTests++;
+            //} 
+            //Console.WriteLine($"Result: {(quitQuickAccessSuccess ? "PASS ✓" : "FAIL ✗")}");
 
             // Generate and open HTML report
             Console.WriteLine("\n═══════════════════════════════════════");

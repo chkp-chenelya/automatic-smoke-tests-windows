@@ -33,6 +33,8 @@ namespace SmokeTestsAgentWin.Tests
 
             public bool Passed { get; set; }
 
+            public string ErrorMessage { get; set; } = string.Empty;
+
             public List<TestStep> Steps { get; set; } = new List<TestStep>();
         }
 
