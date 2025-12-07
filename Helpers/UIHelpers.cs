@@ -55,8 +55,8 @@ namespace SmokeTestsAgentWin.Tests
             {
                 var desktop = automation.GetDesktop();
                 var windowById = desktop
-                                   .FindAllChildren(cf.ByControlType(ControlType.Window))
-                                   .FirstOrDefault(w => w.Properties.AutomationId == automationId);
+                    .FindAllChildren(cf.ByControlType(ControlType.Window))
+                    .FirstOrDefault(w => w.Properties.AutomationId == automationId);
                 if (windowById != null)
                 {
                     Console.WriteLine($"{logPrefix}Window found by AutomationId '{automationId}'");
@@ -68,12 +68,6 @@ namespace SmokeTestsAgentWin.Tests
         
         }
 
-        /// <summary>
-        /// Tries to click a button element using Invoke pattern first, then Click as fallback.
-        /// </summary>
-        /// <param name="element">The button element to click.</param>
-        /// <param name="logPrefix">Optional prefix for log messages.</param>
-        /// <returns>True if the button was clicked successfully, false otherwise.</returns>
         public static bool TryClickButton(AutomationElement element, string logPrefix = "")
         {
             // Try Invoke pattern first
