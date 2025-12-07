@@ -54,14 +54,30 @@ namespace SmokeTestsAgentWin.Tests
             return WaitForWindow(automation, () =>
             {
                 var desktop = automation.GetDesktop();
-                var windowById = desktop
-                    .FindAllChildren(cf.ByControlType(ControlType.Window))
-                    .FirstOrDefault(w => w.Properties.AutomationId == automationId);
+                var allWindows = desktop.FindAllChildren(cf.ByControlType(ControlType.Window));
                 
-                if (windowById != null)
+                // Safely search for window by AutomationId, handling windows that don't support this property
+                foreach (var window in allWindows)
                 {
-                    Console.WriteLine($"{logPrefix}Window found by AutomationId '{automationId}'");
-                    return windowById.AsWindow();
+                    try
+                    {
+                        var windowAutomationId = window.Properties.AutomationId.ValueOrDefault;
+                        if (windowAutomationId == automationId)
+                        {
+                            Console.WriteLine($"{logPrefix}Window found by AutomationId '{automationId}'");
+                            return window.AsWindow();
+                        }
+                    }
+                    catch (FlaUI.Core.Exceptions.PropertyNotSupportedException)
+                    {
+                        // Skip windows that don't support AutomationId property
+                        continue;
+                    }
+                    catch (Exception)
+                    {
+                        // Skip windows with other property access errors
+                        continue;
+                    }
                 }
                 
                 return null;

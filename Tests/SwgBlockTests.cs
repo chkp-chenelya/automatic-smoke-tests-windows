@@ -6,6 +6,7 @@ using SmokeTestsAgentWin.Helpers;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Intrinsics.X86;
 using System.Threading;
 
 namespace SmokeTestsAgentWin.Tests
@@ -29,13 +30,14 @@ namespace SmokeTestsAgentWin.Tests
         private const string Step4Name = "Click Connect button to establish VPN";
         private const string Step5Name = "Wait for VPN connection (button changes to Disconnect)";
         private const string Step6Name = "Verify website is blocked by VPN";
-        private const string Step7Name = "Click empty button to close app";
+        private const string Step7Name = "Click Close button to close app";
 
         // Window and button names
         private const string HarmonySaseWindowName = "Harmony SASE";
         private const string HomeButtonName = "Home";
         private const string ConnectButtonName = "Connect";
         private const string DisconnectButtonName = "Disconnect";
+        private const string CloseButtonAutomationId = "CloseButton";
 
         // URLs and timeouts
         private const string BlockedTestUrl = "https://www.888.com/";
@@ -45,42 +47,6 @@ namespace SmokeTestsAgentWin.Tests
         private const int SupportScreenTimeoutSeconds = 6;
         private const int HomePageLoadDelayMs = 2000;
         private const int AppCloseDelayMs = 1000;
-
-        /// <summary>
-        /// Main entry point for running the SWG block test.
-        /// Launches the application and executes the test workflow.
-        /// </summary>
-        /// <param name="testCase">The test case to report results to</param>
-        public static void RunTest(TestReport.TestCase testCase)
-        {
-            var report = new TestReport { TestName = testCase.Name, StartTime = testCase.StartTime };
-
-            Window? quickAccessWindow = null;
-
-            try
-            {
-                // Launch application and get Quick Access window
-                quickAccessWindow = ApplicationLauncher.LaunchHarmonySaseApp();
-
-                // Run the test and collect results
-                bool success = RunSwgBlockTestWithReport(quickAccessWindow, report);
-
-                // Copy steps to test case
-                testCase.Steps.AddRange(report.Steps);
-                testCase.Passed = success;
-
-                if (!success)
-                {
-                    throw new Exception("One or more test steps failed");
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log but don't suppress the exception
-                Console.WriteLine($"{LogPrefix}Test execution error: {ex.Message}");
-                throw;
-            }
-        }
 
         /// <summary>
         /// Runs the SWG block test and adds results to the report.
@@ -97,15 +63,15 @@ namespace SmokeTestsAgentWin.Tests
         /// <returns>True if all steps passed, false otherwise</returns>
         public static bool RunSwgBlockTestWithReport(Window quickAccessWindow, TestReport report)
         {
-            var automation = new UIA3Automation();
+            var automation = quickAccessWindow.Automation;
             bool overallSuccess = true;
 
-            // Step 1: Click Support button in Quick Access
+            // Step 1: Click initial Quit button From Quick Access
             overallSuccess &= report.ExecuteStep(
                 Step1Name,
                 () => UIHelpers.FindAndClickButtonByAutomationId(quickAccessWindow, SupportButtonAutomationId, LogPrefix),
-                "Support button clicked successfully",
-                "Failed to find or click Support button");
+                "Successfully clicked Quit button",
+                "Failed to find or click Quit button");
 
             if (!overallSuccess)
             {
@@ -344,7 +310,7 @@ namespace SmokeTestsAgentWin.Tests
                 return false;
             }
 
-            // Step 7: Click empty button to close the app
+            // Step 7: Click Close button to close the app
             overallSuccess &= report.ExecuteStep(
                 Step7Name,
                 () =>
@@ -359,23 +325,23 @@ namespace SmokeTestsAgentWin.Tests
                         return false;
                     }
 
-                    // Find the empty button (the one without text, after the other buttons)
-                    var allButtons = window.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-                    var emptyButton = allButtons.FirstOrDefault(b => string.IsNullOrEmpty(b.Name));
-
-                    if (emptyButton == null)
+                    // Find the Close button by AutomationId
+                    var result = UIHelpers.FindAndClickButtonByAutomationId(window, CloseButtonAutomationId, LogPrefix);
+                    
+                    if (result)
                     {
-                        Console.WriteLine($"{LogPrefix}Could not find empty button");
-                        return false;
+                        Console.WriteLine($"{LogPrefix}Close button clicked successfully");
+                        Thread.Sleep(AppCloseDelayMs); // Wait for app to close
                     }
-
-                    emptyButton.Click();
-                    Console.WriteLine($"{LogPrefix}Empty button clicked to close app");
-                    Thread.Sleep(AppCloseDelayMs); // Wait for app to close
-                    return true;
+                    else
+                    {
+                        Console.WriteLine($"{LogPrefix}Failed to find or click Close button");
+                    }
+                    
+                    return result;
                 },
-                "Empty button clicked successfully, app closed",
-                "Failed to find or click empty button");
+                "Close button clicked successfully, app closed",
+                "Failed to find or click Close button");
 
             return overallSuccess;
         }
