@@ -273,25 +273,71 @@ namespace SmokeTestsAgentWin.Tests
                 Step6Name,
                 () =>
                 {
-                    Console.WriteLine($"{LogPrefix}Opening browser to {BlockedTestUrl} to verify VPN blocking...");
+                    Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedTestUrl} using curl to verify VPN blocking...");
 
-                    var processStartInfo = new ProcessStartInfo
+                    try
                     {
-                        FileName = BlockedTestUrl,
-                        UseShellExecute = true
-                    };
+                        var curlProcess = new ProcessStartInfo
+                        {
+                            FileName = "curl",
+                            Arguments = $"-I {BlockedTestUrl}",
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            CreateNoWindow = true
+                        };
 
-                    Process.Start(processStartInfo);
+                        using (var process = Process.Start(curlProcess))
+                        {
+                            if (process == null)
+                            {
+                                Console.WriteLine($"{LogPrefix}Failed to start curl process");
+                                return false;
+                            }
 
-                    // Wait for browser to load and user to verify
-                    Console.WriteLine($"{LogPrefix}Browser opened. Waiting {BrowserVerificationWaitMs / 1000} seconds to check for blocked page redirect...");
-                    Thread.Sleep(BrowserVerificationWaitMs);
+                            var output = process.StandardOutput.ReadToEnd();
+                            var error = process.StandardError.ReadToEnd();
+                            process.WaitForExit(15000); // 15 second timeout
 
-                    Console.WriteLine($"{LogPrefix}Please manually verify: If you see a 'blocked' page, VPN is working. If 888.com loaded, VPN is NOT blocking.");
-                    return true;
+                            Console.WriteLine($"{LogPrefix}Curl output:\n{output}");
+                            if (!string.IsNullOrEmpty(error))
+                            {
+                                Console.WriteLine($"{LogPrefix}Curl error: {error}");
+                            }
+
+                            // Check for 403 Forbidden status
+                            if (output.Contains("403 Forbidden") || output.Contains("Firefly-Pep-Sessionid"))
+                            {
+                                Console.WriteLine($"{LogPrefix}✓ BLOCKED: Received 403 Forbidden response detected (Harmony SASE block)");
+                                return true;
+                            }
+                            // Check for 200 OK (not blocked)
+                            else if (output.Contains("200 OK") || output.Contains("HTTP/1.1 200"))
+                            {
+                                Console.WriteLine($"{LogPrefix}✗ NOT BLOCKED: Received 200 OK response - website is accessible");
+                                return false;
+                            }
+                            // Connection errors mean blocked
+                            else if (!string.IsNullOrEmpty(error) || output.Contains("Could not resolve host"))
+                            {
+                                Console.WriteLine($"{LogPrefix}✓ BLOCKED: Connection error");
+                                return true;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"{LogPrefix}Unexpected response - check output above");
+                                return false;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"{LogPrefix}Error executing curl: {ex.Message}");
+                        throw;
+                    }
                 },
-                "Browser opened to test URL. Manual verification required: Test PASSES if redirected to blocked page, FAILS if 888.com loads directly.",
-                "Failed to open browser");
+                "Website is blocked by VPN (verified via curl - 403 Forbidden)",
+                "Failed to verify website blocking");
 
             if (!overallSuccess)
             {
