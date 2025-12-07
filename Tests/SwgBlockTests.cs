@@ -36,7 +36,7 @@ namespace SmokeTestsAgentWin.Tests
         // Window and button names
         private const string HarmonySaseWindowName = "Harmony SASE";
         private const string DisconnectButtonName = "Disconnect";
-        private const string CloseButtonAutomationId = "CloseButton";
+        private const string CloseButtonAutomationId = "MainWindowCloseButton";
 
         // URLs and timeouts
         private const string BlockedTestUrl = "https://www.888.com/";
