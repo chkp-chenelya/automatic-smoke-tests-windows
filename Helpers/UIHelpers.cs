@@ -57,6 +57,7 @@ namespace SmokeTestsAgentWin.Tests
                 var windowById = desktop
                     .FindAllChildren(cf.ByControlType(ControlType.Window))
                     .FirstOrDefault(w => w.Properties.AutomationId == automationId);
+
                 if (windowById != null)
                 {
                     Console.WriteLine($"{logPrefix}Window found by AutomationId '{automationId}'");
