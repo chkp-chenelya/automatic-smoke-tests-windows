@@ -1,15 +1,10 @@
 ﻿using FlaUI.Core.AutomationElements;
-using SmokeTestsAgentWin.Helpers;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace SmokeTestsAgentWin.Tests
 {
-    public static class SwgAlwaysOn
+    public static class SwgAlwaysOnTests
     {
         private const string LogPrefix = "[SwgAlwaysOn] ";
         private const string QuickAccessSignOutButtonAutomationId = "QuickAccessSignOutButton";
@@ -24,7 +19,6 @@ namespace SmokeTestsAgentWin.Tests
         private const string Step2 = "Wait for Sign Out confirmation dialog";
         private const string Step3 = "Click Sign Out in confirmation dialog";
         private const string Step4 = "Verify website is blocked by VPN";
-        private const string Step5 = "Close the application";
 
         /// <summary>
         /// Runs the SWG Always On test and adds results to the report.
@@ -85,7 +79,6 @@ namespace SmokeTestsAgentWin.Tests
                 return false;
             }
             
-
             // Step 4: Verify website is blocked by VPN
             overallSuccess &= report.ExecuteStep(
                 Step4,

@@ -49,7 +49,7 @@ class Program
                 testName: swgAlwaysOnTest,
                 testNumber: 2,
                 report: report,
-                testRunner: (mainWindow) => SwgAlwaysOn.RunSwgAlwaysOnTestWithReport(mainWindow, report),
+                testRunner: (mainWindow) => SwgAlwaysOnTests.RunSwgAlwaysOnTestWithReport(mainWindow, report),
                 ref totalTests
             );
 
@@ -58,7 +58,7 @@ class Program
                 testName: quitFromQuickAccessWindow,
                 testNumber: 3,
                 report: report,
-                testRunner: (mainWindow) => QuitQuickAccessTests.RunQuitTestWithReport(mainWindow, report),
+                testRunner: (mainWindow) => QuitOnboardingTests.RunQuitTestWithReport(mainWindow, report),
                 ref totalTests,
                 useOnboardingWindow: true);
 
@@ -105,7 +105,6 @@ class Program
             : ApplicationLauncher.LaunchHarmonySaseApp();
         Console.WriteLine("\n═══════════════════════════════════════");
         Console.WriteLine($"Test {testNumber}: {testName}");
-        Console.WriteLine("═══════════════════════════════════════");
         Console.WriteLine("═══════════════════════════════════════");
 
         var testCase = new TestReport.TestCase
