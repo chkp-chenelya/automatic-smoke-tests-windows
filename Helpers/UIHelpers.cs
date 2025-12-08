@@ -57,29 +57,42 @@ namespace SmokeTestsAgentWin.Tests
                 var windowById = desktop
                     .FindAllChildren(cf.ByControlType(ControlType.Window))
                     .FirstOrDefault(w => w.Properties.AutomationId == automationId);
-                
+
                 if (windowById != null)
                 {
                     Console.WriteLine($"{logPrefix}Window found by AutomationId '{automationId}'");
                     return windowById.AsWindow();
                 }
-                
+
                 return null;
             }, timeoutSeconds, logPrefix);
+        
         }
 
-        private static bool TryClickButton(AutomationElement element, string logPrefix = "")
+        public static bool TryClickButton(AutomationElement element, string logPrefix = "")
         {
+            // Try Invoke pattern first
             try
             {
-                Console.WriteLine($"{logPrefix}Using Click()...");
-                element.Click();
+                var invokePattern = element.Patterns.Invoke.Pattern;
+                Console.WriteLine($"{logPrefix}Using Invoke pattern...");
+                invokePattern.Invoke();
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception invokeEx)
             {
-                Console.WriteLine($"{logPrefix}Click failed: {ex.Message}");
-                return false;
+                Console.WriteLine($"{logPrefix}Invoke pattern failed: {invokeEx.Message}, trying Click...");
+                try
+                {
+                    Console.WriteLine($"{logPrefix}Using Click()...");
+                    element.Click();
+                    return true;
+                }
+                catch (Exception clickEx)
+                {
+                    Console.WriteLine($"{logPrefix}Click also failed: {clickEx.Message}");
+                    return false;
+                }
             }
         }
 
