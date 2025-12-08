@@ -278,16 +278,16 @@ namespace SmokeTestsAgentWin.Tests
         /// <summary>
         /// Verifies that a website is blocked by the VPN using curl.
         /// </summary>
-        private static bool VerifyWebsiteBlocked()
+        public static bool VerifyWebsiteBlocked(string blockedUrl = "https://www.888.com/", string logPrefix = "[SwgBlockTests] ")
         {
-            Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedTestUrl} using curl to verify VPN blocking...");
+            Console.WriteLine($"{logPrefix}Testing HTTP request to {blockedUrl} using curl to verify VPN blocking...");
 
             try
             {
                 var curlProcess = new ProcessStartInfo
                 {
                     FileName = "curl",
-                    Arguments = $"-I {BlockedTestUrl}",
+                    Arguments = $"-I {blockedUrl}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -298,7 +298,7 @@ namespace SmokeTestsAgentWin.Tests
                 {
                     if (process == null)
                     {
-                        Console.WriteLine($"{LogPrefix}Failed to start curl process");
+                        Console.WriteLine($"{logPrefix}Failed to start curl process");
                         return false;
                     }
 
@@ -306,40 +306,40 @@ namespace SmokeTestsAgentWin.Tests
                     var error = process.StandardError.ReadToEnd();
                     process.WaitForExit(15000);
 
-                    Console.WriteLine($"{LogPrefix}Curl output:\n{output}");
+                    Console.WriteLine($"{logPrefix}Curl output:\n{output}");
                     if (!string.IsNullOrEmpty(error))
                     {
-                        Console.WriteLine($"{LogPrefix}Curl error: {error}");
+                        Console.WriteLine($"{logPrefix}Curl error: {error}");
                     }
 
                     // Check for 403 Forbidden (blocked)
                     if (output.Contains("403 Forbidden") || output.Contains("Firefly-Pep-Sessionid"))
                     {
-                        Console.WriteLine($"{LogPrefix}✓ BLOCKED: Received 403 Forbidden response detected (Harmony SASE block)");
+                        Console.WriteLine($"{logPrefix}✓ BLOCKED: Received 403 Forbidden response detected (Harmony SASE block)");
                         return true;
                     }
                     // Check for 200 OK (not blocked)
                     else if (output.Contains("200 OK") || output.Contains("HTTP/1.1 200"))
                     {
-                        Console.WriteLine($"{LogPrefix}✗ NOT BLOCKED: Received 200 OK response - website is accessible");
+                        Console.WriteLine($"{logPrefix}✗ NOT BLOCKED: Received 200 OK response - website is accessible");
                         return false;
                     }
                     // Connection errors mean blocked
                     else if (!string.IsNullOrEmpty(error) || output.Contains("Could not resolve host"))
                     {
-                        Console.WriteLine($"{LogPrefix}✓ BLOCKED: Connection error");
+                        Console.WriteLine($"{logPrefix}✓ BLOCKED: Connection error");
                         return true;
                     }
                     else
                     {
-                        Console.WriteLine($"{LogPrefix}Unexpected response - check output above");
+                        Console.WriteLine($"{logPrefix}Unexpected response - check output above");
                         return false;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{LogPrefix}Error executing curl: {ex.Message}");
+                Console.WriteLine($"{logPrefix}Error executing curl: {ex.Message}");
                 throw;
             }
         }
@@ -347,7 +347,7 @@ namespace SmokeTestsAgentWin.Tests
         /// <summary>
         /// Closes the main Harmony SASE window.
         /// </summary>
-        private static bool CloseMainWindow(AutomationBase automation)
+        public static bool CloseMainWindow(AutomationBase automation)
         {
             var desktop = automation.GetDesktop();
             var cf = new ConditionFactory(new UIA3PropertyLibrary());

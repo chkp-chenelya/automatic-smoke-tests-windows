@@ -17,7 +17,7 @@ namespace SmokeTestsAgentWin.Tests
         private const int InitialDialogWaitMs = 2000;
         private const int ConfirmationDialogTimeoutSeconds = 6;
 
-        private const string QuitButtonAutomationId = "QuickAccessQuitButton";
+        private const string QuitButtonAutomationId = "OnboardingQuitButton";
         private const string QuitConfirmButtonAutomationId = "QuitConfirmButton";
         private const string ConfirmationDialogAutomationId = "QuitConfirmationDialog";
 
@@ -25,15 +25,15 @@ namespace SmokeTestsAgentWin.Tests
         private const string Step2 = "Wait for confirmation dialog";
         private const string Step3 = "Click Quit in confirmation dialog";
 
-        public static bool RunQuitTestWithReport(Window quickAccessWindow, TestReport report)
+        public static bool RunQuitTestWithReport(Window onBoardingAccessWindow, TestReport report)
         {
-            var automation = quickAccessWindow.Automation;
+            var automation = onBoardingAccessWindow.Automation;
             bool overallSuccess = true;
 
             // Step 1: Click initial Quit button From Quick Access
             overallSuccess &= report.ExecuteStep(
                 Step1,
-                () => UIHelpers.FindAndClickButtonByAutomationId(quickAccessWindow, QuitButtonAutomationId, LogPrefix),
+                () => UIHelpers.FindAndClickButtonByAutomationId(onBoardingAccessWindow, QuitButtonAutomationId, LogPrefix),
                 "Successfully clicked Quit button",
                 "Failed to find or click Quit button");
 
