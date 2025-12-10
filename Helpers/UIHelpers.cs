@@ -138,5 +138,47 @@ namespace SmokeTestsAgentWin.Tests
 
             return foundWindow;
         }
+
+        /// <summary>
+        /// Attempts to close a dialog window by clicking a cancel button or closing it directly.
+        /// </summary>
+        /// <param name="dialogWindow">The dialog window to close</param>
+        /// <param name="cancelButtonAutomationId">The AutomationId of the cancel button (optional)</param>
+        /// <param name="logPrefix">Optional prefix for log messages</param>
+        public static void CleanupDialog(Window? dialogWindow, string cancelButtonAutomationId = "CancelButton", string logPrefix = "")
+        {
+            if (dialogWindow == null)
+            {
+                Console.WriteLine($"{logPrefix}No dialog to cleanup");
+                return;
+            }
+
+            try
+            {
+                Console.WriteLine($"{logPrefix}Attempting to cleanup dialog by clicking Cancel...");
+                if (FindAndClickButtonByAutomationId(dialogWindow, cancelButtonAutomationId, logPrefix))
+                {
+                    Console.WriteLine($"{logPrefix}Dialog cleanup successful - Cancel clicked");
+                    System.Threading.Thread.Sleep(500); // Brief wait for dialog to close
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{logPrefix}Failed to click Cancel button: {ex.Message}");
+            }
+
+            try
+            {
+                Console.WriteLine($"{logPrefix}Attempting to close dialog window directly...");
+                dialogWindow.Close();
+                Console.WriteLine($"{logPrefix}Dialog cleanup successful - Window closed");
+                System.Threading.Thread.Sleep(500); // Brief wait for dialog to close
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{logPrefix}Failed to close dialog window: {ex.Message}");
+            }
+        }
     }
 }
