@@ -82,7 +82,7 @@ namespace SmokeTestsAgentWin.Tests
             // Step 4: Verify website is blocked by VPN
             overallSuccess &= report.ExecuteStep(
                 Step4,
-                () => SwgBlockTests.VerifyWebsiteBlocked(logPrefix: LogPrefix),
+                () => SwgBlockTests.VerifyWebsiteBlocked(LogPrefix: LogPrefix),
                 "Website is blocked by VPN (verified via curl - 403 Forbidden)",
                 "Failed to verify website blocking");
 

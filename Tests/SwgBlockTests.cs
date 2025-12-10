@@ -39,7 +39,6 @@ namespace SmokeTestsAgentWin.Tests
         private const string CloseButtonAutomationId = "MainWindowCloseButton";
 
         // URLs and timeouts
-        private const string BlockedTestUrl = "https://www.888.com/";
         private const int MaxVpnConnectionWaitMs = 120000; // 2 minutes
         private const int VpnCheckIntervalMs = 2000;
         private const int SupportScreenTimeoutSeconds = 6;
@@ -278,16 +277,16 @@ namespace SmokeTestsAgentWin.Tests
         /// <summary>
         /// Verifies that a website is blocked by the VPN using curl.
         /// </summary>
-        public static bool VerifyWebsiteBlocked(string blockedUrl = "https://www.888.com/", string logPrefix = "[SwgBlockTests] ")
+        public static bool VerifyWebsiteBlocked(string BlockedUrl = "https://www.888.com/", string LogPrefix = "[SwgBlockTests] ")
         {
-            Console.WriteLine($"{logPrefix}Testing HTTP request to {blockedUrl} using curl to verify VPN blocking...");
+            Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedUrl} using curl to verify VPN blocking...");
 
             try
             {
                 var curlProcess = new ProcessStartInfo
                 {
                     FileName = "curl",
-                    Arguments = $"-I {blockedUrl}",
+                    Arguments = $"-I {BlockedUrl}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -298,7 +297,7 @@ namespace SmokeTestsAgentWin.Tests
                 {
                     if (process == null)
                     {
-                        Console.WriteLine($"{logPrefix}Failed to start curl process");
+                        Console.WriteLine($"{LogPrefix}Failed to start curl process");
                         return false;
                     }
 
@@ -306,40 +305,40 @@ namespace SmokeTestsAgentWin.Tests
                     var error = process.StandardError.ReadToEnd();
                     process.WaitForExit(15000);
 
-                    Console.WriteLine($"{logPrefix}Curl output:\n{output}");
+                    Console.WriteLine($"{LogPrefix}Curl output:\n{output}");
                     if (!string.IsNullOrEmpty(error))
                     {
-                        Console.WriteLine($"{logPrefix}Curl error: {error}");
+                        Console.WriteLine($"{LogPrefix}Curl error: {error}");
                     }
 
                     // Check for 403 Forbidden (blocked)
                     if (output.Contains("403 Forbidden") || output.Contains("Firefly-Pep-Sessionid"))
                     {
-                        Console.WriteLine($"{logPrefix}✓ BLOCKED: Received 403 Forbidden response detected (Harmony SASE block)");
+                        Console.WriteLine($"{LogPrefix}✓ BLOCKED: Received 403 Forbidden response detected (Harmony SASE block)");
                         return true;
                     }
                     // Check for 200 OK (not blocked)
                     else if (output.Contains("200 OK") || output.Contains("HTTP/1.1 200"))
                     {
-                        Console.WriteLine($"{logPrefix}✗ NOT BLOCKED: Received 200 OK response - website is accessible");
+                        Console.WriteLine($"{LogPrefix}✗ NOT BLOCKED: Received 200 OK response - website is accessible");
                         return false;
                     }
                     // Connection errors mean blocked
                     else if (!string.IsNullOrEmpty(error) || output.Contains("Could not resolve host"))
                     {
-                        Console.WriteLine($"{logPrefix}✓ BLOCKED: Connection error");
+                        Console.WriteLine($"{LogPrefix}✓ BLOCKED: Connection error");
                         return true;
                     }
                     else
                     {
-                        Console.WriteLine($"{logPrefix}Unexpected response - check output above");
+                        Console.WriteLine($"{LogPrefix}Unexpected response - check output above");
                         return false;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{logPrefix}Error executing curl: {ex.Message}");
+                Console.WriteLine($"{LogPrefix}Error executing curl: {ex.Message}");
                 throw;
             }
         }
