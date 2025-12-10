@@ -20,61 +20,28 @@ namespace SmokeTestsAgentWin.Helpers
         private const int MaxLaunchRetries = 3;
         private const int RetryDelayMs = 3000; // 3 seconds between retries
 
+        public enum WindowType
+        {
+            QuickAccess,
+            Onboarding
+        }
+
         /// Launches the Harmony SASE application and returns the Quick Access window.
         public static Window LaunchHarmonySaseApp()
         {
-            Window? window = null;
-            int attemptNumber = 0;
-
-            while (attemptNumber < MaxLaunchRetries && window == null)
-            {
-                attemptNumber++;
-                
-                try
-                {
-                    if (attemptNumber > 1)
-                    {
-                        Console.WriteLine($"\nRetrying application launch (attempt {attemptNumber}/{MaxLaunchRetries})...");
-                        Thread.Sleep(RetryDelayMs);
-                    }
-
-                    LaunchApplication();
-
-                    Console.WriteLine($"Waiting for Perimeter81 Quick Access window to start (max 2 minutes)...");
-                    var automation = new UIA3Automation();
-                    var stopwatch = Stopwatch.StartNew();
-
-                    window = WaitForWindowWithExponentialBackoff(automation, stopwatch);
-
-                    if (window != null)
-                    {
-                        Console.WriteLine($"Found Quick Access window after {stopwatch.ElapsedMilliseconds}ms");
-                        Console.WriteLine($"Working with window: {window.Name}");
-                        return window;
-                    }
-                    else if (attemptNumber < MaxLaunchRetries)
-                    {
-                        Console.WriteLine($"Failed to find window on attempt {attemptNumber}. Will retry...");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error during launch attempt {attemptNumber}: {ex.Message}");
-                    if (attemptNumber >= MaxLaunchRetries)
-                    {
-                        throw;
-                    }
-                }
-            }
-
-            throw new InvalidOperationException(
-                $"Failed to find Harmony SASE application window after {MaxLaunchRetries} attempts. " +
-                "Ensure the application is installed and can be launched.");
+            return LaunchHarmonySaseApp(WindowType.QuickAccess);
         }
 
         /// Launches the Harmony SASE application and returns the Onboarding window.
         public static Window LaunchHarmonySaseAppForOnboarding()
         {
+            return LaunchHarmonySaseApp(WindowType.Onboarding);
+        }
+
+        /// Launches the Harmony SASE application and returns the specified window type.
+        private static Window LaunchHarmonySaseApp(WindowType windowType)
+        {
+            string windowTypeName = windowType == WindowType.QuickAccess ? "Quick Access" : "Onboarding";
             Window? window = null;
             int attemptNumber = 0;
 
@@ -92,21 +59,21 @@ namespace SmokeTestsAgentWin.Helpers
 
                     LaunchApplication();
 
-                    Console.WriteLine($"Waiting for Perimeter81 Onboarding window to start (max 2 minutes)...");
+                    Console.WriteLine($"Waiting for Perimeter81 {windowTypeName} window to start (max 2 minutes)...");
                     var automation = new UIA3Automation();
                     var stopwatch = Stopwatch.StartNew();
 
-                    window = WaitForOnboardingWindowWithExponentialBackoff(automation, stopwatch);
+                    window = WaitForWindowWithExponentialBackoff(automation, stopwatch, windowType);
 
                     if (window != null)
                     {
-                        Console.WriteLine($"Found Onboarding window after {stopwatch.ElapsedMilliseconds}ms");
+                        Console.WriteLine($"Found {windowTypeName} window after {stopwatch.ElapsedMilliseconds}ms");
                         Console.WriteLine($"Working with window: {window.Name}");
                         return window;
                     }
                     else if (attemptNumber < MaxLaunchRetries)
                     {
-                        Console.WriteLine($"Failed to find onboarding window on attempt {attemptNumber}. Will retry...");
+                        Console.WriteLine($"Failed to find {windowTypeName} window on attempt {attemptNumber}. Will retry...");
                     }
                 }
                 catch (Exception ex)
@@ -120,7 +87,7 @@ namespace SmokeTestsAgentWin.Helpers
             }
 
             throw new InvalidOperationException(
-                $"Failed to find Harmony SASE onboarding window after {MaxLaunchRetries} attempts. " +
+                $"Failed to find Harmony SASE {windowTypeName} window after {MaxLaunchRetries} attempts. " +
                 "Ensure the application is installed and can be launched.");
         }
 
@@ -133,32 +100,16 @@ namespace SmokeTestsAgentWin.Helpers
             Process.Start(startInfo);
         }
 
-        private static Window? WaitForWindowWithExponentialBackoff(UIA3Automation automation, Stopwatch stopwatch)
+        private static Window? WaitForWindowWithExponentialBackoff(UIA3Automation automation, Stopwatch stopwatch, WindowType windowType)
         {
             int checkInterval = InitialCheckIntervalMs;
 
             while (stopwatch.ElapsedMilliseconds < StartupWaitTimeMs)
             {
-                var window = FindQuickAccessWindow(automation);
-                if (window != null)
-                {
-                    return window;
-                }
-
-                Thread.Sleep(checkInterval);
-                checkInterval = Math.Min(checkInterval * 2, MaxCheckIntervalMs);
-            }
-
-            return null;
-        }
-
-        private static Window? WaitForOnboardingWindowWithExponentialBackoff(UIA3Automation automation, Stopwatch stopwatch)
-        {
-            int checkInterval = InitialCheckIntervalMs;
-
-            while (stopwatch.ElapsedMilliseconds < StartupWaitTimeMs)
-            {
-                var window = FindOnboardingWindow(automation);
+                var window = windowType == WindowType.QuickAccess 
+                    ? FindQuickAccessWindow(automation) 
+                    : FindOnboardingWindow(automation);
+                    
                 if (window != null)
                 {
                     return window;
