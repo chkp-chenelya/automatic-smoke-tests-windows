@@ -21,6 +21,7 @@ class Program
     {
         const string testSuiteName = "Harmony SASE Smoke Tests Suite";
         const string swgBlockTest = "SWG Block";
+        const string performanceTest = "Performance";
         const string swgAlwaysOnTest = "SWG Always On";
         const string quitFromQuickAccessWindow = "Quit From Quick Access Window";
 
@@ -44,19 +45,28 @@ class Program
                 ref totalTests
             );
 
-            // Test 2: SWG Always On Test
+            // Test 2: Performance Test
+            passedTests += RunTest(
+                testName: performanceTest,
+                testNumber: 2,
+                report: report,
+                testRunner: (mainWindow) => PerformanceTests.RunPerformanceTestWithReport(mainWindow, report),
+                ref totalTests
+            );
+
+            // Test 3: SWG Always On Test
             passedTests += RunTest(
                 testName: swgAlwaysOnTest,
-                testNumber: 2,
+                testNumber: 3,
                 report: report,
                 testRunner: (mainWindow) => SwgAlwaysOnTests.RunSwgAlwaysOnTestWithReport(mainWindow, report),
                 ref totalTests
             );
 
-            // Test 3: Quit From Quick Access Window
+            // Test 4: Quit From Quick Access Window
             passedTests += RunTest(
                 testName: quitFromQuickAccessWindow,
-                testNumber: 3,
+                testNumber: 4,
                 report: report,
                 testRunner: (mainWindow) => QuitOnboardingTests.RunQuitTestWithReport(mainWindow, report),
                 ref totalTests,
