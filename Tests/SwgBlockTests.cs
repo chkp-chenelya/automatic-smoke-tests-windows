@@ -39,6 +39,7 @@ namespace SmokeTestsAgentWin.Tests
         private const string CloseButtonAutomationId = "MainWindowCloseButton";
 
         // URLs and timeouts
+        private const string BlockedTestUrl = "https://www.888.com/";
         private const int MaxVpnConnectionWaitMs = 120000; // 2 minutes
         private const int VpnCheckIntervalMs = 2000;
         private const int SupportScreenTimeoutSeconds = 6;
@@ -277,7 +278,7 @@ namespace SmokeTestsAgentWin.Tests
         /// <summary>
         /// Verifies that a website is blocked by the VPN using curl.
         /// </summary>
-        public static bool VerifyWebsiteBlocked(string BlockedTestUrl = "https://www.888.com/", string LogPrefix = "[SwgBlockTests] ")
+        public static bool VerifyWebsiteBlocked(string LogPrefix = "[SwgBlockTests] ")
         {
             Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedTestUrl} using curl to verify VPN blocking...");
 
