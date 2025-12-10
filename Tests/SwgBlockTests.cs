@@ -277,16 +277,16 @@ namespace SmokeTestsAgentWin.Tests
         /// <summary>
         /// Verifies that a website is blocked by the VPN using curl.
         /// </summary>
-        public static bool VerifyWebsiteBlocked(string BlockedUrl = "https://www.888.com/", string LogPrefix = "[SwgBlockTests] ")
+        public static bool VerifyWebsiteBlocked(string BlockedTestUrl = "https://www.888.com/", string LogPrefix = "[SwgBlockTests] ")
         {
-            Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedUrl} using curl to verify VPN blocking...");
+            Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedTestUrl} using curl to verify VPN blocking...");
 
             try
             {
                 var curlProcess = new ProcessStartInfo
                 {
                     FileName = "curl",
-                    Arguments = $"-I {BlockedUrl}",
+                    Arguments = $"-I {BlockedTestUrl}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
