@@ -21,6 +21,7 @@ class Program
     {
         const string testSuiteName = "Harmony SASE Smoke Tests Suite";
         const string swgBlockTest = "SWG Block";
+        const string swgAlwaysOnTest = "SWG Always On";
         const string quitFromQuickAccessWindow = "Quit From Quick Access Window";
 
         try
@@ -43,14 +44,23 @@ class Program
                 ref totalTests
             );
 
-            // Test 2: Quit From Quick Access Window
+            // Test 2: SWG Always On Test
             passedTests += RunTest(
-                testName: quitFromQuickAccessWindow,
+                testName: swgAlwaysOnTest,
                 testNumber: 2,
                 report: report,
-                testRunner: (mainWindow) => QuitQuickAccessTests.RunQuitTestWithReport(mainWindow, report),
+                testRunner: (mainWindow) => SwgAlwaysOnTests.RunSwgAlwaysOnTestWithReport(mainWindow, report),
                 ref totalTests
             );
+
+            // Test 3: Quit From Quick Access Window
+            passedTests += RunTest(
+                testName: quitFromQuickAccessWindow,
+                testNumber: 3,
+                report: report,
+                testRunner: (mainWindow) => QuitOnboardingTests.RunQuitTestWithReport(mainWindow, report),
+                ref totalTests,
+                useOnboardingWindow: true);
 
             // Generate and open HTML report
             Console.WriteLine("\n═══════════════════════════════════════");
@@ -72,7 +82,6 @@ class Program
             EnsureApplicationClosed();
         }
     }
-
     /// <summary>
     /// Runs a single test and updates the test report.
     /// </summary>
@@ -81,15 +90,19 @@ class Program
     /// <param name="report">The test report to update</param>
     /// <param name="testRunner">The function that executes the test</param>
     /// <param name="totalTests">Reference to the total test counter</param>
+    /// <param name="useOnboardingWindow">If true, waits for onboarding window instead of quick access</param>
     /// <returns>1 if the test passed, 0 otherwise</returns>
     private static int RunTest(
         string testName,
         int testNumber,
         TestReport report,
         Func<Window, bool> testRunner,
-        ref int totalTests)
+        ref int totalTests,
+        bool useOnboardingWindow = false)
     {
-        var mainWindow = ApplicationLauncher.LaunchHarmonySaseApp();
+        var mainWindow = useOnboardingWindow 
+            ? ApplicationLauncher.LaunchHarmonySaseAppForOnboarding()
+            : ApplicationLauncher.LaunchHarmonySaseApp();
         Console.WriteLine("\n═══════════════════════════════════════");
         Console.WriteLine($"Test {testNumber}: {testName}");
         Console.WriteLine("═══════════════════════════════════════");

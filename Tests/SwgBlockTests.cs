@@ -278,7 +278,7 @@ namespace SmokeTestsAgentWin.Tests
         /// <summary>
         /// Verifies that a website is blocked by the VPN using curl.
         /// </summary>
-        private static bool VerifyWebsiteBlocked()
+        public static bool VerifyWebsiteBlocked(string LogPrefix = "[SwgBlockTests] ")
         {
             Console.WriteLine($"{LogPrefix}Testing HTTP request to {BlockedTestUrl} using curl to verify VPN blocking...");
 
@@ -347,7 +347,7 @@ namespace SmokeTestsAgentWin.Tests
         /// <summary>
         /// Closes the main Harmony SASE window.
         /// </summary>
-        private static bool CloseMainWindow(AutomationBase automation)
+        public static bool CloseMainWindow(AutomationBase automation)
         {
             var desktop = automation.GetDesktop();
             var cf = new ConditionFactory(new UIA3PropertyLibrary());

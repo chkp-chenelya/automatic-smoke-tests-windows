@@ -11,13 +11,13 @@ using System.Threading;
 
 namespace SmokeTestsAgentWin.Tests
 {
-    public class QuitQuickAccessTests
+    public class QuitOnboardingTests
     {
         private const string LogPrefix = "[Quit] ";
         private const int InitialDialogWaitMs = 2000;
         private const int ConfirmationDialogTimeoutSeconds = 6;
 
-        private const string QuitButtonAutomationId = "QuickAccessQuitButton";
+        private const string QuitButtonAutomationId = "OnboardingQuitButton";
         private const string QuitConfirmButtonAutomationId = "QuitConfirmButton";
         private const string ConfirmationDialogAutomationId = "QuitConfirmationDialog";
 
@@ -25,15 +25,15 @@ namespace SmokeTestsAgentWin.Tests
         private const string Step2 = "Wait for confirmation dialog";
         private const string Step3 = "Click Quit in confirmation dialog";
 
-        public static bool RunQuitTestWithReport(Window quickAccessWindow, TestReport report)
+        public static bool RunQuitTestWithReport(Window onboardingAccessWindow, TestReport report)
         {
-            var automation = quickAccessWindow.Automation;
+            var automation = onboardingAccessWindow.Automation;
             bool overallSuccess = true;
 
-            // Step 1: Click initial Quit button From Quick Access
+            // Step 1: Click initial Quit button in Onboarding window
             overallSuccess &= report.ExecuteStep(
                 Step1,
-                () => UIHelpers.FindAndClickButtonByAutomationId(quickAccessWindow, QuitButtonAutomationId, LogPrefix),
+                () => UIHelpers.FindAndClickButtonByAutomationId(onboardingAccessWindow, QuitButtonAutomationId, LogPrefix),
                 "Successfully clicked Quit button",
                 "Failed to find or click Quit button");
 
